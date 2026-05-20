@@ -1,0 +1,122 @@
+name: 🏭 Daily Project Refresh
+
+on:
+  schedule:
+    - cron: '30 1 * * *'   # 08:30 WIB (UTC+7)
+  workflow_dispatch:
+    inputs:
+      project_index:
+        description: 'Project index (0-29), leave empty for auto'
+        required: false
+        default: ''
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout project-factory
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Determine today's project
+        id: pick
+        run: |
+          python3 - <<'EOF'
+          import json, os, datetime
+
+          projects = json.load(open('projects.json'))
+          n = len(projects)
+
+          # Manual override via workflow_dispatch
+          override = os.environ.get('INPUT_PROJECT_INDEX', '').strip()
+          if override.isdigit():
+              idx = int(override) % n
+          else:
+              # Rotate daily by day-of-year
+              day = datetime.date.today().timetuple().tm_yday
+              idx = day % n
+
+          proj = projects[idx]
+          print(f"Today's project: [{idx}] {proj['name']} — {proj['desc']}")
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"name={proj['name']}\n")
+              f.write(f"desc={proj['desc']}\n")
+              f.write(f"idx={idx}\n")
+          EOF
+        env:
+          INPUT_PROJECT_INDEX: ${{ github.event.inputs.project_index }}
+
+      - name: Update project repo — add CHANGELOG entry
+        env:
+          GH_TOKEN: ${{ secrets.FACTORY_TOKEN }}
+          REPO_NAME: ${{ steps.pick.outputs.name }}
+          REPO_DESC: ${{ steps.pick.outputs.desc }}
+          PROJ_IDX: ${{ steps.pick.outputs.idx }}
+        run: |
+          python3 - <<'EOF'
+          import os, json, base64, datetime, urllib.request, urllib.error
+
+          token = os.environ['GH_TOKEN']
+          owner = "dimas-renanda"
+          repo  = os.environ['REPO_NAME']
+          desc  = os.environ['REPO_DESC']
+          today = datetime.date.today().isoformat()
+
+          def gh(method, path, data=None):
+              url = f"https://api.github.com{path}"
+              body = json.dumps(data).encode() if data else None
+              req = urllib.request.Request(url, data=body, method=method, headers={
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28"
+              })
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r: return json.load(r)
+              except urllib.error.HTTPError as e: return json.loads(e.read())
+
+          def b64(s): return base64.b64encode(s.encode()).decode()
+
+          # Append to CHANGELOG.md
+          path = "CHANGELOG.md"
+          r = gh("GET", f"/repos/{owner}/{repo}/contents/{path}")
+          if "content" in r:
+              existing = base64.b64decode(r["content"]).decode()
+              sha = r["sha"]
+          else:
+              existing = f"# Changelog — {repo}\n\n"
+              sha = None
+
+          entry = f"## {today}\n- 🔄 Daily refresh by project-factory\n- Repo: [{repo}](https://github.com/{owner}/{repo})\n\n"
+          new_content = existing + entry
+
+          data = {"message": f"chore: daily refresh {today}", "content": b64(new_content)}
+          if sha: data["sha"] = sha
+          result = gh("PUT", f"/repos/{owner}/{repo}/contents/{path}", data)
+
+          if "content" in result:
+              print(f"✅ Updated {repo}/CHANGELOG.md")
+          else:
+              print(f"⚠️  {result.get('message', result)}")
+          EOF
+
+      - name: Update project-factory index
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "project-factory[bot]"
+          TODAY=$(date +%Y-%m-%d)
+          echo "Last refresh: $TODAY — ${{ steps.pick.outputs.name }}" > last_refresh.txt
+          git add last_refresh.txt
+          git diff --cached --quiet || git commit -m "chore: daily refresh $TODAY (${{ steps.pick.outputs.name }})"
+          git push
