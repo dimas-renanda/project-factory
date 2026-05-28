@@ -1,1 +1,1 @@
-Last refresh: 2026-05-27 — py-dice-roller
+Last refresh: 2026-05-28 — bash-wifi-info
