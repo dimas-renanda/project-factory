@@ -1,1 +1,1 @@
-Last refresh: 2026-05-31 — js-color-palette
+Last refresh: 2026-06-01 — go-url-shortener
