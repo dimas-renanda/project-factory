@@ -1,1 +1,1 @@
-Last refresh: 2026-06-03 — py-weather-cli
+Last refresh: 2026-06-04 — js-markdown-previewer
