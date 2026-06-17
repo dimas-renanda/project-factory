@@ -1,1 +1,1 @@
-Last refresh: 2026-06-16 — js-flashcard-app
+Last refresh: 2026-06-17 — py-image-resizer
