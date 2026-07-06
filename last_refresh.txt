@@ -1,1 +1,1 @@
-Last refresh: 2026-07-05 — py-qr-generator
+Last refresh: 2026-07-06 — go-json-formatter
