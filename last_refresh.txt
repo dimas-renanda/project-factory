@@ -1,1 +1,1 @@
-Last refresh: 2026-07-15 — bash-git-aliases
+Last refresh: 2026-07-16 — js-flashcard-app
