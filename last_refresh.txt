@@ -1,1 +1,1 @@
-Last refresh: 2026-07-17 — py-image-resizer
+Last refresh: 2026-07-18 — go-word-counter
