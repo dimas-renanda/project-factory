@@ -1,1 +1,1 @@
-Last refresh: 2026-07-31 — go-url-shortener
+Last refresh: 2026-08-01 — bash-sysmon
