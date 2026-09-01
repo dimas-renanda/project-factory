@@ -1,1 +1,1 @@
-Last refresh: 2026-08-31 — bash-sysmon
+Last refresh: 2026-09-01 — py-weather-cli
