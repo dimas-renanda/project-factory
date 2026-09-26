@@ -1,1 +1,1 @@
-Last refresh: 2026-09-25 — bash-wifi-info
+Last refresh: 2026-09-26 — js-bmi-calculator
