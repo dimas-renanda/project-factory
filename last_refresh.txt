@@ -1,1 +1,1 @@
-Last refresh: 2026-11-01 — js-markdown-previewer
+Last refresh: 2026-11-02 — py-qr-generator
